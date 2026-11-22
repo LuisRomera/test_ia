@@ -32,6 +32,12 @@ if __name__ == '__main__':
             )
             log.info(f"MinIO Buckets: {m_client.list_buckets()}")
 
+            # Get the latest file from the configured path
+            bucket = minio_cfg['bucket_name']
+            path = minio_cfg.get('path', '')
+            latest_file = m_client.get_latest_file(bucket, path)
+            log.info(f"Latest file in {path}: {latest_file}")
+
         greet('World')
     except Exception as e:
         log.exception("Failed to initialize the job")

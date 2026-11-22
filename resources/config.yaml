@@ -5,3 +5,4 @@ minio:
   access_key: "minioadmin"
   secret_key: "minioadmin"
   bucket_name: "my-bucket"
+  path: "data/files"
