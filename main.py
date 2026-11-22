@@ -1,44 +1,35 @@
-#!/usr/bin/env python3
-
+import argparse
 import logging
-import os
-from typing import Any
-
-from config_loader import ConfigLoader
+from config_loader import load_config
+from handler.minio_handler import MinIOHandler
 
 log = logging.getLogger(__name__)
 
-def greet(name: str):
-    log.info(f'Hello, {name}!')
+def main():
+    parser = argparse.ArgumentParser(description="Interact with MinIO to retrieve file metadata.")
+    args = parser.parse_args()
 
-if __name__ == '__main__':
-    config_path = os.path.join('resources', 'config.yaml')
     try:
-        # Use the ConfigLoader class to handle YAML reading
-        loader = ConfigLoader(config_path)
-        
-        # Accessing values as a dictionary via the loader
-        db_url = loader.get('database_url', 'No URL provided')
-        log.info(f"Loaded configuration. Database URL: {db_url}")
+        config = load_config("resources/config.yaml")
+        minio_client = MinIOHandler(
+            endpoint=config['minio']['endpoint'],
+            access_key=os.getenv('MINIO_ACCESS_KEY', config['minio']['access_key']),
+            secret_key=os.getenv('MINIO_SECRET_KEY', config['minio']['secret_key']),
+            secure=config['minio']['secure']
+        )
 
-        # Initialize MinIO Client using config
-        minio_cfg = loader.get('minio')
-        if minio_cfg:
-            from minio_client import MinioClient
-            m_client = MinioClient(
-                endpoint=minio_cfg['endpoint'],
-                access_key=minio_cfg['access_key'],
-                secret_key=minio_cfg['secret_key']
-            )
-            log.info(f"MinIO Buckets: {m_client.list_buckets()}")
+        buckets = minio_client.list_buckets()
+        log.info(f"Available buckets: {buckets}")
 
-            # Get the latest file from the configured path
-            bucket = minio_cfg['bucket_name']
-            path = minio_cfg.get('path', '')
-            latest_file = m_client.get_latest_file(bucket, path)
-            log.info(f"Latest file in {path}: {latest_file}")
+        latest_file = minio_client.get_latest_file(config['minio']['bucket'], prefix=config['minio'].get('prefix', ''))
+        if latest_file:
+            log.info(f"Latest file in bucket '{config['minio']['bucket']}': {latest_file}")
+        else:
+            log.warning("No files found in the specified bucket.")
 
-        greet('World')
     except Exception as e:
-        log.exception("Failed to initialize the job")
-        exit(1)
+        log.exception("An error occurred while interacting with MinIO.")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()
