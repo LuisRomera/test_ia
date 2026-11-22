@@ -1,2 +1,7 @@
 database_url: "postgresql://user:password@host:port/database"
 api_key: "your_secret_api_key"
+minio:
+  endpoint: "localhost:9000"
+  access_key: "minioadmin"
+  secret_key: "minioadmin"
+  bucket_name: "my-bucket"

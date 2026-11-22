@@ -1,20 +1,12 @@
 #!/usr/bin/env python3
 
 import logging
-import yaml
 import os
-from typing import Any, Dict
+from typing import Any
+
+from config_loader import ConfigLoader
 
 log = logging.getLogger(__name__)
-
-def load_config(config_path: str) -> Dict[str, Any]:
-    """Loads the YAML configuration file into a dictionary."""
-    if not os.path.exists(config_path):
-        log.error(f"Configuration file not found at {config_path}")
-        raise FileNotFoundError(f"Config file missing: {config_path}")
-    
-    with open(config_path, 'r') as f:
-        return yaml.safe_load(f) or {}
 
 def greet(name: str):
     log.info(f'Hello, {name}!')
@@ -22,11 +14,24 @@ def greet(name: str):
 if __name__ == '__main__':
     config_path = os.path.join('resources', 'config.yaml')
     try:
-        config = load_config(config_path)
-        # Example of accessing the dictionary values
-        db_url = config.get('database_url', 'No URL provided')
-        log.info(f"Loaded configuration. Database URL: {db_url}")
+        # Use the ConfigLoader class to handle YAML reading
+        loader = ConfigLoader(config_path)
         
+        # Accessing values as a dictionary via the loader
+        db_url = loader.get('database_url', 'No URL provided')
+        log.info(f"Loaded configuration. Database URL: {db_url}")
+
+        # Initialize MinIO Client using config
+        minio_cfg = loader.get('minio')
+        if minio_cfg:
+            from minio_client import MinioClient
+            m_client = MinioClient(
+                endpoint=minio_cfg['endpoint'],
+                access_key=minio_cfg['access_key'],
+                secret_key=minio_cfg['secret_key']
+            )
+            log.info(f"MinIO Buckets: {m_client.list_buckets()}")
+
         greet('World')
     except Exception as e:
         log.exception("Failed to initialize the job")
