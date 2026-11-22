@@ -1,0 +1,2 @@
+database_url: "postgresql://user:password@host:port/database"
+api_key: "your_secret_api_key"
