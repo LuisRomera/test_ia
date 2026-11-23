@@ -1,1 +1,2 @@
 # Python packages the jobs need, one per line (installed before every run)
+minio==8.0.3
